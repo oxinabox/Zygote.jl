@@ -66,17 +66,6 @@ chainrules_blacklist(::typeof(sum), f, x::AbstractArray{<:Real}) = true
 # Except for sum(abs2, xs), that is fine
 chainrules_blacklist(::typeof(sum), ::typeof(abs2), x::AbstractArray{<:Real}) = false
 
-# ChainRules current Wirtinger deriviative is not compatible
-# reconsider after https://github.com/JuliaDiff/ChainRulesCore.jl/pull/29
-for f in (abs, abs2, conj, adjoint, hypot, angle, imag, real)
-  @eval chainrules_blacklist(::typeof($f), ::Complex) = true
-end
-
-# Sum of nonarrays doesn't really work
-# Fixed in https://github.com/JuliaDiff/ChainRules.jl/pull/124
-chainrules_blacklist(::typeof(sum), x) = true
-chainrules_blacklist(::typeof(sum), x::AbstractArray{<:Real}) = false
-
 
 #=="""
   _pullback_via_chainrules(pb)
