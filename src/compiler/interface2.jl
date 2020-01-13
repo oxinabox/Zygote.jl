@@ -74,17 +74,12 @@ Converts a ChainRules pullback into a Zygote pullback.
 `pb` should be a ChainRules pullback, as returned from the second return value of `rrule`
 """==#
 function _pullback_via_chainrules(pb)
-  # This is the optimized version of
-  # _pullback_via_chainrules(pb) = (Δs...) -> zextern.(pb(Δs...))
-  function zback(Δs...)
+  Core.println(pb)
+  function zygote_pullback(Δs...)
     ∂s = pb(Δs...)
-    ntuple(length(∂s)) do ii
-      ∂ = ∂s[ii]
-      zextern(∂)
-    end
+    # TODO: Should not unthunk on the way out of a pullback, but rather on way in since
+    # that is when we know it is probably going to be used.
+    # `conj` is need as ChainRules does not conjugate derivatives
+    return map(conj ∘ ChainRules.unthunk, ∂s)
   end
 end
-
-zextern(x) = ChainRules.extern(x)
-zextern(::ChainRules.Zero) = nothing  # Zygote loves calling things nothing
-zextern(::ChainRules.DNE) = nothing  # Zygote loves calling things nothing
