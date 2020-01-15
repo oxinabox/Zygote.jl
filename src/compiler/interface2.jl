@@ -74,12 +74,12 @@ Converts a ChainRules pullback into a Zygote pullback.
 `pb` should be a ChainRules pullback, as returned from the second return value of `rrule`
 """==#
 function _pullback_via_chainrules(pb)
-  Core.println(pb)
   function zygote_pullback(Δs...)
     ∂s = pb(Δs...)
     # TODO: Should not unthunk on the way out of a pullback, but rather on way in since
     # that is when we know it is probably going to be used.
-    # `conj` is need as ChainRules does not conjugate derivatives
-    return map(conj ∘ ChainRules.unthunk, ∂s)
+    ∂s_zy = map(ChainRules.unthunk, ∂s)
+    @info "Invoking via ChainRules" typeof(pb) typeof(∂s) typeof(∂s_zy)
+    return ∂s_zy
   end
 end
