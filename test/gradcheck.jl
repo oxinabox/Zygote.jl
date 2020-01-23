@@ -1426,7 +1426,7 @@ end
   @testset "broadcast +, -, *, /" begin
     for sx in [(M, N), (M, 1), (1, N), (1, 1)]
       for sy in [(M, N), (M, 1), (1, N), (1, 1)]
-        
+
         #addition, subtraction, multiplication
         for f ∈ (+, -, *)
           @test gradtest((x, y) -> f.(Fill(first(x), sx...), Fill(first(y), sy...)), [x], [y])
