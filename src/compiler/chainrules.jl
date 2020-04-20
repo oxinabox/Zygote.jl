@@ -1,6 +1,6 @@
 const chainrules_fallback = which(rrule, Tuple{Any})
 
-function has_chainrule(T)
+function has_chain_rrule(T)
   m = meta(Tuple{typeof(rrule),T.parameters...})
   if m.method === chainrules_fallback
     return false, m.code.edges
@@ -9,11 +9,11 @@ function has_chainrule(T)
   end
 end
 
-wrap_chainrules(x::Thunk) = x()
-wrap_chainrules(x) = x
-wrap_chainrules(x::Tuple) = wrap_chainrules.(x)
+# For now we are just not going to deal with thunks
+wrap_chainrules(x) = unthunk(x)
+wrap_chainrules(x::Tuple) = map(wrap_chainrules, x)
 
-function chainrule(f, args...)
+function chain_rrule(f, args...)
   y, back = rrule(f, args...)
   y, dy -> wrap_chainrules(back(dy))
 end

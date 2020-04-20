@@ -3,11 +3,10 @@ module Zygote
 using LinearAlgebra, Statistics
 using LinearAlgebra: copytri!, AbstractTriangular
 using ArrayLayouts: MemoryLayout, AbstractColumnMajor
-using ChainRules
 
 import ZygoteRules: @adjoint, @adjoint!, AContext, adjoint, _pullback, pullback, literal_getproperty
 
-using ChainRules: ChainRules
+using ChainRules: ChainRules, rrule, unthunk
 using IRTools
 using MacroTools, Requires
 using MacroTools: @forward
