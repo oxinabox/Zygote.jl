@@ -14,7 +14,7 @@ ignore(T) = all(T -> T <: Type, T.parameters)
   argnames!(meta, Symbol("#self#"), :ctx, :f, :args)
   forw = varargs!(meta, forw, 3)
   forw = slots!(pis!(inlineable!(forw)))
-  append!(meta.code.edges, cr_edges)
+  append!(meta.code.edges, cr_edges)  # be ready to swap to using chainrule if one is declared
   return update!(meta.code, forw)
 end
 
