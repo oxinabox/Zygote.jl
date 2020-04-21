@@ -10,12 +10,21 @@ function has_chain_rrule(T)
 end
 
 # For now we are just not going to deal with thunks
-wrap_chainrules(x) = unthunk(x)
+wrap_chainrules(x) = conj(unthunk(x))
 wrap_chainrules(x::Tuple) = map(wrap_chainrules, x)
 
 function chain_rrule(f, args...)
-  y, By = rrule(f, args...)
-  back(::Nothing) = nothing
-  back(dy) = wrap_chainrules(By(dy))
-  return y, back
+  #@info "Using ChainRule" f, typeof.(args)
+  y, back = rrule(f, args...)
+
+  zpullback(dy) = wrap_chainrules(back(dy))
+  # `nothing->nothing` can be deleted after https://github.com/FluxML/Zygote.jl/issues/603
+  # though it might be worth keeping as a performance optimization (benchmarking pending)
+  zpullback(::Nothing) = nothing
+
+  y, zpullback
 end
+
+# Don't need to conjugate these rrules, because of reasons I don't understand
+chain_rrule(f::typeof(abs), x::Number) = rrule(f, x)
+chain_rrule(f::typeof(abs2), x::Number) = rrule(f, x)
