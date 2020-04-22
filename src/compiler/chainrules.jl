@@ -17,7 +17,7 @@ function chain_rrule(f, args...)
   #@info "Using ChainRule" f, typeof.(args)
   y, back = rrule(f, args...)
 
-  zpullback(dy) = wrap_chainrules(back(dy))
+  zpullback(dy) = wrap_chainrules(back(conj(dy)))
   # `nothing->nothing` can be deleted after https://github.com/FluxML/Zygote.jl/issues/603
   # though it might be worth keeping as a performance optimization (benchmarking pending)
   zpullback(::Nothing) = nothing
