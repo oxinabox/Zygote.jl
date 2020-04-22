@@ -25,6 +25,3 @@ function chain_rrule(f, args...)
   y, zpullback
 end
 
-# Don't need to conjugate these rrules, because of reasons I don't understand
-chain_rrule(f::typeof(abs), x::Number) = rrule(f, x)
-chain_rrule(f::typeof(abs2), x::Number) = rrule(f, x)
