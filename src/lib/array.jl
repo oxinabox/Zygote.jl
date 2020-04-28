@@ -339,8 +339,6 @@ end
 @adjoint parent(x::LinearAlgebra.Adjoint) = parent(x), ȳ -> (LinearAlgebra.Adjoint(ȳ),)
 @adjoint parent(x::LinearAlgebra.Transpose) = parent(x), ȳ -> (LinearAlgebra.Transpose(ȳ),)
 
-@adjoint dot(x::AbstractArray, y::AbstractArray) = dot(x, y), Δ->(Δ .* y, Δ .* x)
-
 function _kron(mat1::AbstractMatrix,mat2::AbstractMatrix)
     m1, n1 = size(mat1)
     mat1_rsh = reshape(mat1,(1,m1,1,n1))
@@ -353,17 +351,7 @@ end
 
 @adjoint kron(a::AbstractMatrix, b::AbstractMatrix) = pullback(_kron, a, b)
 
-@adjoint function Diagonal(d::AbstractVector)
-  back(Δ::NamedTuple) = (Δ.diag,)
-  back(Δ::AbstractMatrix) = (diag(Δ),)
-  return Diagonal(d), back
-end
-
 @adjoint diag(A::AbstractMatrix) = diag(A), Δ->(Diagonal(Δ),)
-
-@adjoint det(xs::Union{Number, AbstractMatrix}) = det(xs), Δ -> (Δ * det(xs) * inv(xs)',)
-
-@adjoint logdet(xs::Union{Number, AbstractMatrix}) = logdet(xs), Δ -> (Δ * inv(xs)',)
 
 @adjoint logabsdet(xs::AbstractMatrix) = logabsdet(xs), Δ -> (Δ[1] * inv(xs)',)
 
@@ -729,6 +717,8 @@ end
   end
 end
 
+# ChainRules has this also but does not use FillArrays, so we have out own defination
+# for improved performance. See https://github.com/JuliaDiff/ChainRules.jl/issues/46
 Zygote.@adjoint function LinearAlgebra.tr(x::AbstractMatrix)
   # x is a squre matrix checked by tr,
   # so we could just use Eye(size(x, 1))
@@ -853,11 +843,11 @@ end
 end
 
 
-# to actually use rfft, one needs to insure that everything 
-# that happens in the Fourier domain could've been done in 
-# the space domain with real numbers. This means enforcing 
-# conjugate symmetry along all transformed dimensions besides 
-# the first. Otherwise this is going to result in *very* weird 
+# to actually use rfft, one needs to insure that everything
+# that happens in the Fourier domain could've been done in
+# the space domain with real numbers. This means enforcing
+# conjugate symmetry along all transformed dimensions besides
+# the first. Otherwise this is going to result in *very* weird
 # behavior.
 @adjoint function rfft(xs::AbstractArray{<:Real})
   return AbstractFFTs.rfft(xs), function(Δ)
