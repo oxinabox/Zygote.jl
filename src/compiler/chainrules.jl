@@ -12,6 +12,7 @@ such that if a suitable rule is defined later, the generated function will recom
 function has_chain_rrule(T)
   m = meta(Tuple{typeof(rrule),T.parameters...})
   if m.method === chainrules_fallback
+    @assert m.code.edges !== nothing
     return false, m.code.edges
   else
     return true, nothing
