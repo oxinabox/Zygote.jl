@@ -6,7 +6,7 @@
     These sensitivities can be added in your own package, or for Base functions they can be added to ChainRules.jl.
 
     This documentation exists to descibe how Zygote works, and how adjoints can be directly defined for Zygote.
-    Defining adjoints this way does not make them accessable to other AD systems, but does let you do things that directly depend on how Zygote works.
+    Defining adjoints this way does not make them accessible to other AD systems, but does let you do things that directly depend on how Zygote works.
     It allows for specific definations of adjoints that are only defined for Zgyote (which might work differently to more generic definations defined for all AD)
 
 
