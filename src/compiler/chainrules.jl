@@ -10,14 +10,39 @@ If it does not, then the second argument is a list of edges to attach to the Cod
 such that if a suitable rule is defined later, the generated function will recompile.
 """
 function has_chain_rrule(T)
+  Core.println("has ", T)
   m = meta(Tuple{typeof(rrule),T.parameters...})
-  if m.method === chainrules_fallback
-    @assert m.code.edges !== nothing
-    return false, m.code.edges
-  else
+  if m.method !== chainrules_fallback
+    # found a rrule, no need to add any edges
     return true, nothing
   end
+
+  # Could be a kwarg function, handle that case
+  ft_parts = T.parameters
+  if is_kwfunc(T.parameters...)
+    # Need to check for rrule for function not the kwfunction.
+    base_T = Tuple{T.parameters[3:end]...}
+    return has_chain_rrule(base_T)
+  end
+
+  # did not find anything, will have to attach edges so it recompiles if one is added
+  @assert m.code.edges !== nothing
+  return false, m.code.edges
 end
+
+"""
+    is_kwfunc(sigt...)
+
+Determines if `sigt` is the type signature of a kwfunction.
+each element of `sigt` should be a type.
+Either the first 3 types are a kwfunc type, a NamedTuple and the matching base function type,
+or the first argument is the base function type and it is not a kwfunction.
+the remaining types in `sigt` are the types of the argument.
+
+"""
+is_kwfunc(k, ::Type{<:NamedTuple}, f, args...) = k==Core.kwftype(f)
+is_kwfunc(::Vararg{Any}) = false
+
 
 """
     wrap_chainrules_output(x)
@@ -66,7 +91,18 @@ Returns a the (primal) value of `f(args...)` and a pullback, by invoking `ChainR
 The pullback is appropriately wrapped up to follow Zygote conventions.
 """
 function chain_rrule(f, args...)
-  y, back = rrule(f, args...)
+  y, back = if is_kwfunc(typeof(f), typeof.(args)...)
+    Core.println("kw")
+    kwargs = args[1]
+    base_f = args[2]
+    pos_args = args[3:end]
+    rrule(base_f, pos_args...; kwargs...)
+    #TODO: need to ensure we are returning pullback in right structure.
+    # May needs to reassemble the kwargs and kwargf
+  else
+    Core.println("norm")
+    rrule(f, args...)
+  end
 
   # Dispatch here handles chainrules considing pullbacks to have multiple input if Tuple.
   # TODO: this could be removed if: https://github.com/JuliaDiff/ChainRulesCore.jl/issues/152
