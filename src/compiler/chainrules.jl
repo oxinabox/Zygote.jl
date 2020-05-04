@@ -10,7 +10,6 @@ If it does not, then the second argument is a list of edges to attach to the Cod
 such that if a suitable rule is defined later, the generated function will recompile.
 """
 function has_chain_rrule(T)
-  Core.println("has ", T)
   m = meta(Tuple{typeof(rrule),T.parameters...})
   if m.method !== chainrules_fallback
     # found a rrule, no need to add any edges
@@ -91,18 +90,7 @@ Returns a the (primal) value of `f(args...)` and a pullback, by invoking `ChainR
 The pullback is appropriately wrapped up to follow Zygote conventions.
 """
 function chain_rrule(f, args...)
-  y, back = if is_kwfunc(typeof(f), typeof.(args)...)
-    Core.println("kw")
-    kwargs = args[1]
-    base_f = args[2]
-    pos_args = args[3:end]
-    rrule(base_f, pos_args...; kwargs...)
-    #TODO: need to ensure we are returning pullback in right structure.
-    # May needs to reassemble the kwargs and kwargf
-  else
-    Core.println("norm")
-    rrule(f, args...)
-  end
+  local back
 
   # Dispatch here handles chainrules considing pullbacks to have multiple input if Tuple.
   # TODO: this could be removed if: https://github.com/JuliaDiff/ChainRulesCore.jl/issues/152
@@ -113,7 +101,18 @@ function chain_rrule(f, args...)
   # though it might be worth keeping as a performance optimization (benchmarking pending)
   zpullback(::Nothing) = nothing
 
-  return y, zpullback
+  if is_kwfunc(typeof(f), typeof.(args)...)
+    kwargs = args[1]
+    base_f = args[2]
+    pos_args = args[3:end]
+    y, back = rrule(base_f, pos_args...; kwargs...)
+
+    kw_zpullback(dy) = (nothing, nothing, zpullback(dy)...)  # first two nothings are for kwfunc and kwargs
+    return y, kw_zpullback
+  else
+    y, back = rrule(f, args...)
+    return y, zpullback
+  end
 end
 
 # Required for nested AD
