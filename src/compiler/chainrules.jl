@@ -32,7 +32,7 @@ end
     is_kwfunc(sigt...)
 
 Determines if `sigt` is the type signature of a kwfunction.
-each element of `sigt` should be a type.
+Each element of `sigt` should be a type.
 Either the first 3 types are a kwfunc type, a NamedTuple and the matching base function type,
 or the first argument is the base function type and it is not a kwfunction.
 the remaining types in `sigt` are the types of the argument.
