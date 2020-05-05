@@ -17,7 +17,6 @@ function has_chain_rrule(T)
   end
 
   # Could be a kwarg function, handle that case
-  ft_parts = T.parameters
   if is_kwfunc(T.parameters...)
     # Need to check for rrule for function not the kwfunction.
     base_T = Tuple{T.parameters[3:end]...}
