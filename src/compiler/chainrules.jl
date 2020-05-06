@@ -16,13 +16,6 @@ function has_chain_rrule(T)
     return true, nothing
   end
 
-  # Could be a kwarg function, handle that case
-  if is_kwfunc(T.parameters...)
-    # Need to check for rrule for function not the kwfunction.
-    base_T = Tuple{T.parameters[3:end]...}
-    return has_chain_rrule(base_T)
-  end
-
   # did not find anything, will have to attach edges so it recompiles if one is added
   @static if VERSION >= v"1.3"
     @assert m.code.edges !== nothing
@@ -121,20 +114,21 @@ Returns a the (primal) value of `f(args...)` and a pullback, by invoking `ChainR
 The pullback is appropriately wrapped up to follow Zygote conventions.
 """
 @inline function chain_rrule(f, args...)
-  # Note we avoid using `map(typeof, args)...` in the condition as it complicates nested AD
-  # so we just check relevent ones by hand
-  if length(args) >= 2 && is_kwfunc(typeof(f), typeof(args[1]), typeof(args[2]))
-    kwargs = args[1]
-    base_f = args[2]
-    pos_args = args[3:end]
-    y, base_f_back = rrule(base_f, pos_args...; kwargs...)
+  y, back = rrule(f, args...)
+  return y, ZBack(back)
+end
 
-    kw_zpullback(dy) = (nothing, nothing, ZBack(base_f_back)(dy)...)  # first two nothings are for kwfunc and kwargs
-    return y, kw_zpullback
-  else
-    y, back = rrule(f, args...)
-    return y, ZBack(back)
-  end
+
+"""
+  chain_rrule_kw(kwf, kwargs, f, args...)
+
+As per [`chain_rrule`](@ref) but with support for kwargs.
+`kwf` should be the kwfunc matching to `f`, and `kwargs` are a `NamedTuple` of keyword arguments.
+"""
+@inline function chain_rrule_kw(kwf, kwargs, f, args...)
+  y, back = rrule(f, args...; kwargs...)
+  kw_zpullback(dy) = (nothing, nothing, ZBack(back)(dy)...)  # first two nothings are for kwfunc and kwargs
+  return y, kw_zpullback
 end
 
 # Required for nested AD
