@@ -50,8 +50,9 @@ Convert `x` from the differentials types ChainRules uses  to the format Zygote u
 @inline wrap_chainrules_output(x::Tuple) = map(wrap_chainrules_output, x)
 @inline wrap_chainrules_output(x::ChainRules.AbstractZero) = nothing
 for T_outer in (:Tuple, :NamedTuple)
-  # we create seperate methods rather than using a Union + a If so that we avoid a branch that changes output type
-    # because nested AD on that kinda thing make Zygote less than happy.
+  # we create separate methods rather than using a `Union` + an `if` so that we avoid a
+  # branch that changes output type, because nested AD on that kinda thing makes Zygote less
+  # than happy.
   @eval @inline function wrap_chainrules_output(x::ChainRules.Composite{P, T}) where {P, T<:$T_outer}
     xp = map(wrap_chainrules_output, x)
     convert($T_outer, xp)
